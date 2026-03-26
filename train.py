@@ -88,4 +88,3 @@ with open('classes.json', 'w') as f:
 
 print("\nModel saved as brain_tumor_model.pth")
 print("Classes saved as classes.json")
-print("Done! Now run: streamlit run app.py")
