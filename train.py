@@ -7,12 +7,14 @@ import json
 
 # step 1: -----------Load the data-------------
 
+# preprocess image before feeding to model
 transform = transforms.Compose([
     transforms.Resize((224,224)),
     transforms.ToTensor(),
-    transforms.Normalize([0.5],[0.5])
+    transforms.Normalize([0.1840, 0.1840, 0.1840],[0.1793, 0.1793, 0.1793])
 ])
 
+# load image from the folder
 train_data = datasets.ImageFolder('data/Training', transform=transform)
 test_data = datasets.ImageFolder('data/Testing', transform=transform)
 
@@ -23,6 +25,7 @@ print("Classes found: ", train_data.classes)
 
 # step 2: --------------Load pretrained ResNet18----------------
 
+# device selection
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Using device: ', device)
 
@@ -34,6 +37,8 @@ for param in model.parameters():
 
 # Replace final layer for 4 classes
 model.fc = nn.Linear(model.fc.in_features, 4)
+
+# move model to gpu if not available then cpu
 model = model.to(device)
 
 # step 3: ---------Train------------

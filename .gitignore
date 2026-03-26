@@ -18,6 +18,7 @@ env/
 
 # Data (optional - usually ignore)
 data/
+test.py
 
 # OS files
 .DS_Store
