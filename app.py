@@ -6,11 +6,9 @@ from PIL import Image
 import json
 import torch.nn as nn
 
-# ── Load class names ──────────────────────────────────────────
 with open('classes.json') as f:
-    class_names = json.load(f)  # ['no_tumor', 'tumor']
+    class_names = json.load(f) 
 
-# ── Load model ────────────────────────────────────────────────
 @st.cache_resource
 def load_model():
     model = models.resnet18(pretrained=False)
@@ -21,20 +19,17 @@ def load_model():
 
 model = load_model()
 
-# ── Image transform ───────────────────────────────────────────
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize([0.5], [0.5])
 ])
 
-# ── Page config ───────────────────────────────────────────────
 st.set_page_config(page_title="Brain Tumor Classifier", page_icon="🧠")
 
-st.title("🧠 Brain Tumor Classifier")
+st.title(" Brain Tumor Classifier")
 st.write("Upload a brain MRI image and the model will predict whether a tumor is present.")
 
-# ── File uploader ─────────────────────────────────────────────
 uploaded_file = st.file_uploader("Choose an MRI image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
@@ -50,7 +45,7 @@ if uploaded_file is not None:
             pred_idx = torch.argmax(probs).item()
             confidence = float(probs[pred_idx]) * 100
 
-    # ── Show result ───────────────────────────────────────────
+    #  Show result 
     label = class_names[pred_idx]
 
     st.divider()
@@ -65,7 +60,6 @@ if uploaded_file is not None:
     elif label == 'pituitary':
         st.warning(f"⚠️ Pituitary Tumor Detected — {confidence:.1f}% confidence")
 
-    # ── Confidence bar ────────────────────────────────────────
     st.write("### Confidence for Each Class")
     for i, name in enumerate(class_names):
         st.write(f"**{name.replace('_', ' ').title()}**")

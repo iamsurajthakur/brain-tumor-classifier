@@ -11,7 +11,7 @@ import json
 transform = transforms.Compose([
     transforms.Resize((224,224)),
     transforms.ToTensor(),
-    transforms.Normalize([0.1840, 0.1840, 0.1840],[0.1793, 0.1793, 0.1793])
+    transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
 ])
 
 # load image from the folder
@@ -44,15 +44,16 @@ model = model.to(device)
 # step 3: ---------Train------------
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.fc.parameters(), lr=0.001)
+optimizer = optim.Adam(model.fc.parameters(), lr=0.001, weight_decay=1e-4)
 
-EPOCHS = 5
+EPOCHS = 25
 
-print("\nStarting training...")
+print("\nTraining started...")
 for epoch in range(EPOCHS):
     model.train()
     running_loss = 0
 
+    # per batch training loop
     for images, labels in train_loader:
         images, labels = images.to(device), labels.to(device)
 
@@ -91,5 +92,3 @@ torch.save(model.state_dict(), 'brain_tumor_model.pth')
 with open('classes.json', 'w') as f:
     json.dump(train_data.classes, f)
 
-print("\nModel saved as brain_tumor_model.pth")
-print("Classes saved as classes.json")
