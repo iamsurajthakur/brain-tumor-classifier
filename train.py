@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader, random_split
 from torch import nn, optim
 import json
 
+EPOCHS = 25
+
 # step 1: -----------Load the data-------------
 
 # preprocess image before feeding to model
@@ -29,8 +31,8 @@ train_transform = transforms.Compose([
 full_train_data = datasets.ImageFolder('data/Training', transform=train_transform)
 test_data = datasets.ImageFolder('data/Testing', transform=transform)
 
-# split training set: 80% training and 20% validation
-val_size   = int(0.2 * len(full_train_data))
+# split training set: 75% training and 25% validation
+val_size   = int(0.25 * len(full_train_data))
 train_size = len(full_train_data) - val_size
 train_data, val_data = random_split(full_train_data, [train_size, val_size])
 
@@ -79,17 +81,17 @@ model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 
 # optimizer using Adam optimizer
-optimizer = optim.Adam(
-    filter(lambda p: p.requires_grad, model.parameters()),
-    lr=0.0001, weight_decay=1e-4
-)
+optimizer = optim.Adam([
+    {'params': model.layer3.parameters(), 'lr': 3e-5},
+    {'params': model.layer4.parameters(), 'lr': 5e-5},
+    {'params': model.fc.parameters(),     'lr': 3e-4},
+], weight_decay=1e-4)
 
 # Reduce LR when val loss stops improving
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode='min', patience=3, factor=0.5
+scheduler = optim.lr_scheduler.CosineAnnealingLR(
+    optimizer, T_max=EPOCHS, eta_min=1e-6
 )
 
-EPOCHS = 25
 
 history = {
     'train_loss': [],
@@ -154,7 +156,7 @@ for epoch in range(EPOCHS):
     history['val_acc'].append(avg_val_acc)
 
     # ── Step scheduler on val loss ────────────
-    scheduler.step(avg_val_loss)
+    scheduler.step()
     current_lr = optimizer.param_groups[0]['lr']
 
     print(f"{epoch+1:>5} | {avg_train_loss:>10.4f} | {avg_train_acc:>8.2f}% | "
