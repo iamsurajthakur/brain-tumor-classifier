@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, random_split
 from torch import nn, optim
 import json
 
-EPOCHS = 25
+EPOCHS = 30
 
 # step 1: -----------Load the data-------------
 
@@ -101,7 +101,7 @@ history = {
 }
 
 best_val_acc = 0.0
-early_stop_patience = 7
+early_stop_patience = 15
 epoch_no_improve = 0
 
 print("\nTraining started...")

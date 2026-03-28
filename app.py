@@ -17,7 +17,7 @@ def load_model():
         nn.Linear(model.fc.in_features, 4)
     )
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.load_state_dict(torch.load('brain_tumor_model.pth', map_location=device))
+    model.load_state_dict(torch.load('brain_tumor_model_best.pth', map_location=device))
     model.eval()
     return model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
