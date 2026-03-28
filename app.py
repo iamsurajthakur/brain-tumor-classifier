@@ -11,22 +11,26 @@ with open('classes.json') as f:
 
 @st.cache_resource
 def load_model():
-    model = models.resnet18(pretrained=False)
-    model.fc = nn.Linear(model.fc.in_features, 4)
-    model.load_state_dict(torch.load('brain_tumor_model.pth', map_location='cuda'))
+    model = models.resnet50(weights=None)
+    model.fc = nn.Sequential(
+        nn.Dropout(0.4),
+        nn.Linear(model.fc.in_features, 4)
+    )
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.load_state_dict(torch.load('brain_tumor_model.pth', map_location=device))
     model.eval()
-    return model
+    return model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
 model = load_model()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize((224,224)),
     transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])
+    transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
 ])
 
 st.set_page_config(page_title="Brain Tumor Classifier", page_icon="🧠")
-
 st.title(" Brain Tumor Classifier")
 st.write("Upload a brain MRI image and the model will predict whether a tumor is present.")
 
@@ -38,7 +42,7 @@ if uploaded_file is not None:
 
     # ── Predict ───────────────────────────────────────────────
     with st.spinner("Analyzing..."):
-        img_tensor = transform(image).unsqueeze(0)
+        img_tensor = transform(image).unsqueeze(0).to(device)
         with torch.no_grad():
             output = model(img_tensor)
             probs = torch.softmax(output, dim=1)[0]
