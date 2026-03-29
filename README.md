@@ -2,6 +2,9 @@
 
 A deep learning image classifier that detects and categorizes brain tumors from MRI scans using a fine-tuned ResNet50 model trained with PyTorch.
 
+**Live Application:**  
+👉 [brain-tumor-scan](https://braintumorscan.streamlit.app/)
+
 ---
 
 ## Overview
