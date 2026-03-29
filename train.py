@@ -1,7 +1,7 @@
 import torch
 import torchvision.models as models
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 from torch import nn, optim
 import json
 
@@ -22,29 +22,34 @@ train_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(),
     transforms.RandomRotation(10),
     transforms.RandomAffine(degrees=0, translate=(0.1,0.1)),
-    transforms.RandomGrayscale(p=0.1),
     transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-full_train_data = datasets.ImageFolder('data/Training', transform=train_transform)
-test_data = datasets.ImageFolder('data/Testing', transform=transform)
+# Base dataset (no transform)
+full_dataset = datasets.ImageFolder('data/Training')
 
-# split training set: 75% training and 25% validation
-val_size   = int(0.25 * len(full_train_data))
-train_size = len(full_train_data) - val_size
-train_data, val_data = random_split(full_train_data, [train_size, val_size])
+# Split indices
+val_size = int(0.25 * len(full_dataset))
+train_size = len(full_dataset) - val_size
+train_indices, val_indices = random_split(range(len(full_dataset)), [train_size, val_size])
 
-# Give the val split clean (no-augmentation) transforms
-val_data.dataset = datasets.ImageFolder('data/Training', transform=transform)
+# Datasets with transforms
+train_dataset = datasets.ImageFolder('data/Training', transform=train_transform)
+val_dataset   = datasets.ImageFolder('data/Training', transform=transform)
+test_dataset  = datasets.ImageFolder('data/Testing', transform=transform)
+# Apply subsets
+train_data = Subset(train_dataset, train_indices.indices)
+val_data   = Subset(val_dataset, val_indices.indices)
 
+# Loaders
 train_loader = DataLoader(train_data, batch_size=20, shuffle=True)
-val_loader   = DataLoader(val_data,   batch_size=20)
-test_loader  = DataLoader(test_data,  batch_size=20)
+val_loader   = DataLoader(val_data, batch_size=20, shuffle=False)
+test_loader  = DataLoader(test_dataset, batch_size=20)
 
-print("Classes:", full_train_data.classes)
-print(f"Train: {train_size} | Val: {val_size} | Test: {len(test_data)}")
+print("Classes:", full_dataset.classes)
+print(f"Train: {train_size} | Val: {val_size} | Test: {len(test_dataset)}")
 
 # step 2: --------------Load pretrained ResNet18----------------
 
@@ -149,29 +154,29 @@ for epoch in range(EPOCHS):
     avg_val_loss = val_loss / len(val_loader)
     avg_val_acc  = 100 * val_correct / val_total
 
-    # ── Log to history ────────────────────────
+    # Log to history 
     history['train_loss'].append(avg_train_loss)
     history['train_acc'].append(avg_train_acc)
     history['val_loss'].append(avg_val_loss)
     history['val_acc'].append(avg_val_acc)
 
-    # ── Step scheduler on val loss ────────────
+    # Step scheduler on val loss 
     scheduler.step()
     current_lr = optimizer.param_groups[0]['lr']
 
     print(f"{epoch+1:>5} | {avg_train_loss:>10.4f} | {avg_train_acc:>8.2f}% | "
           f"{avg_val_loss:>8.4f} | {avg_val_acc:>6.2f}% | {current_lr:>8.6f}")
 
-    # ── Save best model ───────────────────────
+    #  Save best model 
     if avg_val_acc > best_val_acc:
         best_val_acc = avg_val_acc
         torch.save(model.state_dict(), 'brain_tumor_model_best.pth')
-        print(f"         ✔ New best val accuracy: {best_val_acc:.2f}% — model saved")
+        print(f"          New best val accuracy: {best_val_acc:.2f}% — model saved")
         epochs_no_improve = 0
     else:
         epochs_no_improve += 1
 
-    # ── Early stopping ────────────────────────
+    #  Early stopping 
     if epochs_no_improve >= early_stop_patience:
         print(f"\nEarly stopping triggered — no improvement for {early_stop_patience} epochs.")
         break
@@ -199,7 +204,7 @@ print(f"Best Val Accuracy seen during training: {best_val_acc:.2f}%")
 torch.save(model.state_dict(), 'brain_tumor_model.pth')
 
 with open('classes.json', 'w') as f:
-    json.dump(full_train_data.classes, f)
+    json.dump(full_dataset.classes, f)
 
 with open('training_history.json', 'w') as f:
     json.dump(history, f, indent=2)
