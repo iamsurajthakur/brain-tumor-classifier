@@ -13,7 +13,6 @@ env/
 .ipynb_checkpoints/
 
 # Model files (important!)
-*.pth
 *.pt
 
 # Data (optional - usually ignore)
